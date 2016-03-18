@@ -7,7 +7,7 @@ The Idea is you can work in any 3D program you want (Maya, Blender, Max3D) and m
 2. open terminal
 
 ##Commands
-`node objToWebglParser.js obj_file> <mtl_file> <output_file>`
+`node objToWebglParser.js <obj_file> <mtl_file> <output_file>`
 
 ##Example/Check for yourself
 'node objToWebglParser.js birthdayBoy.obj birthdayBoy.mtl myWebGLarrays.js
