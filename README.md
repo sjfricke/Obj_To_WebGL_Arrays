@@ -14,7 +14,7 @@ The Idea is you can work in any 3D program you want (Maya, Blender, Max3D) and m
 'node objToWebglParser.js birthdayBoy.obj birthdayBoy.mtl myWebGLarrays.js
 
 #ISSUES
-* Currently I have not got the normals to operate correctly
-* It only regonizes the diffuse colors at the moment
+* currently only supports single modeling, 
+** some multi models work, but can glitch out
 
 
