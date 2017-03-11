@@ -3,9 +3,11 @@
 // By: Spencer Fricke
 // 
 // To run:
-//      node objToWebglParser.js <inputFile.obj> <inputFile.mtl> <outputFile>
+//      node objToWebglParser.js <inputFile.obj> <inputFile.mtl> <outputFile> <arrayName>
 //////////////////////
 var fs = require('fs');
+
+//used to save spaces for parsing
 var indexSpace1;
 var indexSpace2;
 var indexSpace3;
@@ -14,10 +16,20 @@ var indexSpace5;
 var indexSpace6;
 var indexSpace7;
 
-
+//holds data that gets out to array in file
 var currentVertexCount = 0;
 var vertexPositions = [];
 var vertexNormals = [];
+var vertexColors = [];
+var vertexIndices = [];
+
+//holds data for contruction of each face
+var buffer_vertexPositions = [];
+var buffer_vertexNormals = [];
+var buffer_vertexColors = [];
+var faceIndex = 0;
+
+
 var allNormals = [];
 var normalCount = 0;
 var triangleIndices = [];
@@ -104,20 +116,26 @@ function readObjLines(input, func) {
     } else {
         //need to add 0,0,0, since array isn't 0 based for indices
         fs.writeFile(process.argv[4], 
-                     "var vertexPositions = new Float32Array( [0,0,0," + vertexPositions + "]);\n" 
+                     "var " + process.argv[5] + " = { \n"
                      +
-                     "var vertexNormals = new Float32Array( [0,0,0," + allNormals + "]);\n" 
+                     "vPosition : { numComponents: 3, data: new Float32Array( [" + vertexPositions + "])},\n" 
                      +
-                     "var vertexDiffuseColor = new Float32Array( [0,0,0," + vertexDiffuseColor + "]);\n" 
+                     "vNormal : { numComponents: 3, data: new Float32Array( [" + vertexNormals + "])},\n" 
                      +
-                     "var triangleIndices = new Uint8Array( [" + triangleIndices + "]);" 
+                     "vTexcoords : { numComponents: 2, data: new Float32Array( [" + vertexColors + "])},\n" 
+                     +
+                     "vColor : { numComponents: 3, data: new Float32Array( [" + vertexDiffuseColor + "])},\n"
+                     +
+                     "vIndices : { numComponents: 3, data: new Uint16Array( [" + vertexIndices + "])}\n"
+                     +
+                     "};"
                      
                      , function(err) {
             if(err) {
                 return console.log(err);
             }
             console.log("Vertexs: " + vertexPositions.length / 3);
-            console.log("Triangles: " + triangleIndices.length / 3);
+            console.log("Triangles: " + vertexIndices.length / 3);
             console.log("The file was saved!");
         });
     
@@ -139,23 +157,25 @@ function objFunc(data) {
         //does it for each vertex that has been added
         //this is because obj files give off vertex -> color -> faces in that order
         //this matches the position and color together      
-        for (var i = 0; i < currentVertexCount; i++){
-            vertexDiffuseColor = vertexDiffuseColor.concat(currentDiffuseColor);
-        }
+    
         
-        currentVertexCount = 0; //resets counter
-
+//        for (var i = 0; i < currentVertexCount; i++){
+//            vertexDiffuseColor = vertexDiffuseColor.concat(currentDiffuseColor);
+//        }
+//        
+//        currentVertexCount = 0; //resets counter    
+   
         
     } //parses vertexs
     else if (data.substr(0,2) == "v ") {
         indexSpace1 = data.indexOf(" ",2);
         indexSpace2 = data.indexOf(" ",indexSpace1 + 1);
 
-        vertexPositions.push(parseFloat(data.substring(2, indexSpace1)));
-        vertexPositions.push(parseFloat(data.substring(indexSpace1 + 1, indexSpace2)));
-        vertexPositions.push(parseFloat(data.substring(indexSpace2 + 1)));
+        buffer_vertexPositions.push(parseFloat(data.substring(2, indexSpace1)));
+        buffer_vertexPositions.push(parseFloat(data.substring(indexSpace1 + 1, indexSpace2)));
+        buffer_vertexPositions.push(parseFloat(data.substring(indexSpace2 + 1)));
         
-        currentVertexCount++;
+       // currentVertexCount++;
         
         
     } //parse normals
@@ -168,38 +188,79 @@ function objFunc(data) {
         indexSpace1 = data.indexOf(" ",3);
         indexSpace2 = data.indexOf(" ",indexSpace1 + 1);
 
-        allNormals.push(parseFloat(data.substring(3, indexSpace1)));
-        allNormals.push(parseFloat(data.substring(indexSpace1 + 1, indexSpace2)));
-        allNormals.push(parseFloat(data.substring(indexSpace2 + 1)));
+        buffer_vertexNormals.push(parseFloat(data.substring(3, indexSpace1)));
+        buffer_vertexNormals.push(parseFloat(data.substring(indexSpace1 + 1, indexSpace2)));
+        buffer_vertexNormals.push(parseFloat(data.substring(indexSpace2 + 1)));
         
         
-            
+               
+
+    } //parse textures
+    else if (data.substr(0,3) == "vt ") {
+        
+        indexSpace1 = data.indexOf(" ",3);
+//        indexSpace2 = data.indexOf(" ",indexSpace1 + 1);
+
+        buffer_vertexColors.push(parseFloat(data.substring(3, indexSpace1)));
+        buffer_vertexColors.push(parseFloat(data.substring(indexSpace1 + 1)));
+        
+                    
            
 
-    } //parse indices
+    }//parse indices
     else if (data.substr(0,2) == "f ") {
-        indexSpace1 = data.indexOf(" ",2);
-        indexSpace2 = data.indexOf(" ",indexSpace1 + 1);
-        indexSpace3 = data.indexOf(" ",indexSpace2 + 1); // is -1 if only 3 items otherwise quad
-
-        indexSpace4 = data.substring(2, data.indexOf("/",2));
-        indexSpace5 = data.substring(indexSpace1 + 1, data.indexOf("/",indexSpace1));
-        indexSpace6 = data.substring(indexSpace2 + 1, data.indexOf("/",indexSpace2));
-        if (indexSpace3 != -1) indexSpace7 = data.substring(indexSpace3 + 1, data.indexOf("/",indexSpace3));
-
-
-        triangleIndices.push(parseInt(indexSpace4));
-        triangleIndices.push(parseInt(indexSpace5));
-        triangleIndices.push(parseInt(indexSpace6));
-
-        if (indexSpace3 != -1) {
-            //takes quad and parses it second triagnle out
-            //EX (1,2,3,4) --> (1,2,3) & (1,3,4)  
-            triangleIndices.push(parseInt(indexSpace4));
-            triangleIndices.push(parseInt(indexSpace6));
-            triangleIndices.push(parseInt(indexSpace7));
+            
+        var triSet = data.substring(2).split(" ");
+        for (var j = 0; j < 3; j++) {
+            var triSubset = triSet[j].split("/");            
+            vertexPositions.push(buffer_vertexPositions[ 3 * (parseInt(triSubset[0])-1) ]);
+            vertexPositions.push(buffer_vertexPositions[ 3 * (parseInt(triSubset[0])-1) + 1 ]);
+            vertexPositions.push(buffer_vertexPositions[ 3 * (parseInt(triSubset[0])-1) + 2 ]);
+            vertexNormals.push(buffer_vertexNormals[ 3 * (parseInt(triSubset[2])-1) ]);
+            vertexNormals.push(buffer_vertexNormals[ 3 * (parseInt(triSubset[2])-1) + 1 ]);
+            vertexNormals.push(buffer_vertexNormals[ 3 * (parseInt(triSubset[2])-1) + 2 ]);
+            vertexColors.push(buffer_vertexColors[ 2 * (parseInt(triSubset[1])-1) ]);
+            vertexColors.push(buffer_vertexColors[ 2 * (parseInt(triSubset[1])-1) + 1 ]);
+            
+            vertexDiffuseColor.push(currentDiffuseColor[0]);
+            vertexDiffuseColor.push(currentDiffuseColor[1]);
+            vertexDiffuseColor.push(currentDiffuseColor[2]);
         }
+        vertexIndices.push(3 * faceIndex);
+        vertexIndices.push(3 * faceIndex + 1);
+        vertexIndices.push(3 * faceIndex + 2);
         
+        
+        //for Quads we need to add extra face
+        //if 
+            // f 1 2 3 4
+        // we need 1, 2, 3 and 1, 3, 4
+        
+        if (triSet.length == 4 ) {
+            for (var j = 0; j < 4; j++) {
+                if (j == 1) continue;
+                var triSubset = triSet[j].split("/");            
+                vertexPositions.push(buffer_vertexPositions[ 3 * (parseInt(triSubset[0])-1) ]);
+                vertexPositions.push(buffer_vertexPositions[ 3 * (parseInt(triSubset[0])-1) + 1 ]);
+                vertexPositions.push(buffer_vertexPositions[ 3 * (parseInt(triSubset[0])-1) + 2 ]);
+                vertexNormals.push(buffer_vertexNormals[ 3 * (parseInt(triSubset[2])-1) ]);
+                vertexNormals.push(buffer_vertexNormals[ 3 * (parseInt(triSubset[2])-1) + 1 ]);
+                vertexNormals.push(buffer_vertexNormals[ 3 * (parseInt(triSubset[2])-1) + 2 ]);
+                vertexColors.push(buffer_vertexColors[ 2 * (parseInt(triSubset[1])-1) ]);
+                vertexColors.push(buffer_vertexColors[ 2 * (parseInt(triSubset[1])-1) + 1 ]);
+                
+                vertexDiffuseColor.push(currentDiffuseColor[0]);
+                vertexDiffuseColor.push(currentDiffuseColor[1]);
+                vertexDiffuseColor.push(currentDiffuseColor[2]);
+            }
+            vertexIndices.push(3 * faceIndex);
+            vertexIndices.push(3 * faceIndex + 1);
+            vertexIndices.push(3 * faceIndex + 2);
+            vertexDiffuseColor.concat(currentDiffuseColor);
+        }
+
+            
+
         //All faces are orderd by vertex normal index order
         //as why stated in the "vn" section need to check for 3 or 4 vn
 

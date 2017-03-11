@@ -1,0 +1,18 @@
+newmtl hand_:lambert16SG
+illum 4
+Kd 0.68 0.41 0.29
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+Ni 1.00
+newmtl hand_:lambert17SG
+illum 4
+Kd 0.46 0.89 0.19
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+Ni 1.00
+newmtl hand_:lambert18SG
+illum 4
+Kd 0.72 0.81 0.03
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+Ni 1.00

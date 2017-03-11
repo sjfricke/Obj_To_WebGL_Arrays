@@ -1,0 +1,31 @@
+newmtl hand_:landscape_initialShadingGroup
+illum 4
+Kd 0.11 0.69 0.11
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+Ni 1.00
+newmtl hand_:landscape_lambert2SG
+illum 4
+Kd 0.62 0.45 0.34
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+Ni 1.00
+newmtl hand_:landscape_lambert4SG
+illum 4
+Kd 0.00 0.33 1.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+Ni 1.00
+newmtl hand_:landscape_landscape_initialShadingGroup
+illum 4
+Kd 0.50 0.50 0.50
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+Ni 1.00
+newmtl lambert3SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd Cubemap_2_2048x1536.jpg
+Ni 1.00
